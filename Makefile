@@ -1,16 +1,123 @@
+SHELL := /bin/bash
+
 all:
+# if docker is running, then let's use docker to build it
+ifneq (,$(shell if docker version &> /dev/null; then echo -; fi))
+	$(MAKE) docker-build
+else
 	$(MAKE) deps
 	$(MAKE) build
-
-
-################################################################################
-##                                 CONSTANTS                                  ##
-################################################################################
+endif
 
 # the name of the program being compiled. this word is in place of file names,
 # directory paths, etc. changing the value of PROG is no guarantee everything
 # continues to function.
 PROG := rexray
+
+
+################################################################################
+##                                  DOCKER                                    ##
+################################################################################
+ifneq (,$(shell if docker version &> /dev/null; then echo -; fi))
+
+DPKG := github.com/emccode/rexray
+DIMG := golang:1.7.1
+DGOHOSTOS := $(shell uname -s | tr A-Z a-z)
+ifeq (undefined,$(origin DGOOS))
+DGOOS := $(DGOHOSTOS)
+endif
+DGOARCH := amd64
+DPRFX := build-rexray
+DNAME := $(DPRFX)
+ifeq (1,$(DBUILD_ONCE))
+DNAME := $(DNAME)-$(shell date +%s)
+endif
+DPATH := /go/src/$(DPKG)
+DSRCS := $(shell git ls-files)
+ifneq (,$(DGLIDE_YAML))
+DSRCS := $(filter-out glide.yaml,$(DSRCS))
+DSRCS := $(filter-out glide.lock,$(DSRCS))
+DSRCS := $(filter-out glide.lock.d,$(DSRCS))
+endif
+DPROG := /go/bin/$(PROG)
+ifneq (linux,$(DGOOS))
+DPROG := /go/bin/$(DGOOS)_$(DGOARCH)/$(PROG)
+endif
+ifeq (darwin,$(DGOHOSTOS))
+DTARC := -
+endif
+DIMG_EXISTS := docker images --format '{{.Repository}}:{{.Tag}}' | grep $(DIMG) &> /dev/null
+DTO_CLOBBER := docker ps -a --format '{{.Names}}' | grep $(DPRFX)
+DNETRC := $(HOME)/.netrc
+
+# DLOCAL_IMPORTS specifics a list of imported packages to copy into the
+# container build's vendor directory instead of what is specified in the
+# glide.lock file. If this variable is set and the GOPATH variable is not
+# then the target will fail.
+ifeq (undefined,$(DLOCAL_IMPORTS))
+DLOCAL_IMPORTS :=
+endif
+ifneq (,$(DLOCAL_IMPORTS))
+ifneq (,$(GOPATH))
+DLOCAL_IMPORTS_FILES := $(foreach I,$(DLOCAL_IMPORTS),$(addprefix $I/,$(shell git --git-dir=$(GOPATH)/src/$(I)/.git --work-tree=$(GOPATH)/src/$(I) ls-files)))
+DLOCAL_IMPORTS_FILES += $(foreach I,$(DLOCAL_IMPORTS),$I/.git)
+endif
+endif
+
+docker-init:
+	@if ! $(DIMG_EXISTS); then docker pull $(DIMG); fi
+	@docker run --name $(DNAME) -d $(DIMG) /sbin/init -D &> /dev/null || true && \
+		docker exec $(DNAME) mkdir -p $(DPATH) && \
+		tar -c $(DTARC) .git $(DSRCS) | docker cp - $(DNAME):$(DPATH)
+ifneq (,$(DGLIDE_YAML))
+	@docker cp $(DGLIDE_YAML) $(DNAME):$(DPATH)/glide.yaml
+endif
+ifneq (,$(wildcard $(DNETRC)))
+	@docker cp $(DNETRC) $(DNAME):/root
+endif
+	docker exec -t $(DNAME) env make -C $(DPATH) deps
+ifneq (,$(DLOCAL_IMPORTS))
+ifeq (,$(GOPATH))
+	@echo GOPATH must be set when using DLOCAL_IMPORTS && false
+else
+	@docker exec -t $(DNAME) rm -fr $(addprefix $(DPATH)/vendor/,$(DLOCAL_IMPORTS))
+	@tar -C $(GOPATH)/src -c $(DTARC) $(DLOCAL_IMPORTS_FILES) | docker cp - $(DNAME):$(DPATH)/vendor
+endif
+endif
+	docker exec -t $(DNAME) env GOOS=$(DGOOS) GOARCH=$(DGOARCH) DOCKER=1 make -C $(DPATH) -j build
+
+docker-build: docker-init
+	@docker cp $(DNAME):$(DPROG) $(PROG)
+	@bytes=$$(stat --format '%s' $(PROG) 2> /dev/null || \
+		stat -f '%z' $(PROG) 2> /dev/null) && mb=$$(($$bytes / 1024 / 1024)) && \
+		printf "\nThe $(PROG) binary is $${mb}MB and located at: \n\n" && \
+		printf "  ./$(PROG)\n\n"
+ifeq (1,$(DBUILD_ONCE))
+	docker stop $(DNAME) &> /dev/null && docker rm $(DNAME) &> /dev/null
+endif
+
+docker-test: DGOOS=linux
+docker-test: docker-init
+	docker exec -t $(DNAME) make -C $(DPATH) test
+
+docker-clean:
+	-docker stop $(DNAME) &> /dev/null && docker rm $(DNAME) &> /dev/null
+
+docker-clobber:
+	-CNAMES=$$($(DTO_CLOBBER)); if [ "$$CNAMES" != "" ]; then \
+		docker stop $$CNAMES && docker rm $$CNAMES; \
+	fi
+
+docker-list:
+	-$(DTO_CLOBBER)
+
+endif # ifneq (,$(shell if docker version &> /dev/null; then echo -; fi))
+
+
+################################################################################
+##                                 CONSTANTS                                  ##
+################################################################################
+ifneq (,$(shell which go 2> /dev/null)) # if go exists
 
 EMPTY :=
 SPACE := $(EMPTY) $(EMPTY)
@@ -19,7 +126,6 @@ LPAREN := (
 RPAREN := )
 COMMA := ,
 5S := $(SPACE)$(SPACE)$(SPACE)$(SPACE)$(SPACE)
-
 
 # a list of the go 1.6 stdlib pacakges as grepped from https://golang.org/pkg/
 GO_STDLIB := archive archive/tar archive/zip bufio builtin bytes compress \
@@ -268,6 +374,9 @@ GO_BINDATA := $(GOPATH)/bin/go-bindata
 go-bindata: $(GO_BINDATA)
 
 GLIDE := $(GOPATH)/bin/glide
+GLIDE_VER := 0.11.1
+GLIDE_TGZ := glide-v$(GLIDE_VER)-$(GOHOSTOS)-$(GOHOSTARCH).tar.gz
+GLIDE_URL := https://github.com/Masterminds/glide/releases/download/v$(GLIDE_VER)/$(GLIDE_TGZ)
 GOGET_LOCK := goget.lock
 GLIDE_LOCK := glide.lock
 GLIDE_YAML := glide.yaml
@@ -282,18 +391,37 @@ ALL_EXT_DEPS_SRCS := $(sort $(EXT_DEPS_SRCS) $(TEST_EXT_DEPS_SRCS))
 
 ifneq (1,$(VENDORED))
 $(GLIDE):
-	go get -u github.com/Masterminds/glide
+	@curl -SLO $(GLIDE_URL) && \
+		tar xzf $(GLIDE_TGZ) && \
+		rm -f $(GLIDE_TGZ) && \
+		mkdir -p $(GOPATH)/bin && \
+		mv $(GOHOSTOS)-$(GOHOSTARCH)/glide $(GOPATH)/bin && \
+		rm -fr $(GOHOSTOS)-$(GOHOSTARCH)
 glide: $(GLIDE)
 GO_DEPS += $(GLIDE)
 
 GO_DEPS += $(GLIDE_LOCK_D)
 $(ALL_EXT_DEPS_SRCS): $(GLIDE_LOCK_D)
 
+ifeq (,$(strip $(wildcard $(GLIDE_LOCK))))
+$(GLIDE_LOCK_D): $(GLIDE_LOCK) | $(GLIDE)
+	touch $@
+
+$(GLIDE_LOCK): $(GLIDE_YAML)
+	$(GLIDE) up
+
+else #ifeq (,$(strip $(wildcard $(GLIDE_LOCK))))
+
 $(GLIDE_LOCK_D): $(GLIDE_LOCK) | $(GLIDE)
 	$(GLIDE) install && touch $@
 
 $(GLIDE_LOCK): $(GLIDE_YAML)
-	touch $@
+	$(GLIDE) up && touch $@ && touch $(GLIDE_LOCK_D)
+
+endif #ifeq (,$(strip $(wildcard $(GLIDE_LOCK))))
+
+$(GLIDE_YAML):
+	$(GLIDE) init
 
 $(GLIDE_LOCK)-clean:
 	rm -f $(GLIDE_LOCK)
@@ -632,10 +760,10 @@ build-libstorage: $(LIBSTORAGE_API) $(LIBSTORAGE_LSX)
 ################################################################################
 ##                                   CLI                                      ##
 ################################################################################
-CLI := $(shell go list -f '{{.Target}}' ./$(PROG))
-CLI_LINUX := $(shell env GOOS=linux go list -f '{{.Target}}' ./$(PROG))
-CLI_DARWIN := $(shell env GOOS=darwin go list -f '{{.Target}}' ./$(PROG))
-CLI_WINDOWS := $(shell env GOOS=windows go list -f '{{.Target}}' ./$(PROG))
+CLI := $(shell go list -f '{{.Target}}' ./cli/$(PROG))
+CLI_LINUX := $(shell env GOOS=linux go list -f '{{.Target}}' ./cli/$(PROG))
+CLI_DARWIN := $(shell env GOOS=darwin go list -f '{{.Target}}' ./cli/$(PROG))
+CLI_WINDOWS := $(shell env GOOS=windows go list -f '{{.Target}}' ./cli/$(PROG))
 
 build-cli-linux: $(CLI_LINUX)
 build-cli-darwin: $(CLI_DARWIN)
@@ -821,7 +949,9 @@ build:
 	$(MAKE) build-libstorage
 	$(MAKE) build-generated
 	$(MAKE) build-$(PROG)
+ifneq (1,$(DOCKER))
 	$(MAKE) stat-prog
+endif
 
 cli: build-cli
 
@@ -849,3 +979,5 @@ clean: $(GO_CLEAN) pkg-clean
 clobber: clean $(GO_CLOBBER)
 
 .PHONY: info clean clobber $(GO_PHONY)
+
+endif # ifneq (,$(shell which go 2> /dev/null))
