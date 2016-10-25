@@ -1,5 +1,5 @@
-hash: d118f5dfd3fe9c3b26b8db7c18efcdc5224eec4f5111448974d1ab920ac3730b
-updated: 2016-10-18T18:49:20.310678122-05:00
+hash: 25e1b264fb9811108941dfb42dce27f1d7f071b28aca625973c5cec685ccf903
+updated: 2016-10-25T13:36:21.967051995+02:00
 imports:
 - name: github.com/akutz/gofig
   version: 697c16916338166671910eeaccc50f21e3c10726
@@ -24,30 +24,33 @@ imports:
   repo: https://github.com/aws/aws-sdk-go
   subpackages:
   - aws
-  - aws/awserr
-  - aws/awsutil
-  - aws/client
-  - aws/client/metadata
-  - aws/corehandlers
   - aws/credentials
   - aws/credentials/ec2rolecreds
-  - aws/defaults
   - aws/ec2metadata
-  - aws/request
   - aws/session
-  - aws/signer/v4
+  - service/ec2
+  - aws/awserr
+  - service/efs
+  - service/s3
+  - aws/client
+  - aws/client/metadata
+  - aws/request
+  - aws/corehandlers
+  - aws/defaults
   - private/endpoints
+  - aws/awsutil
+  - aws/signer/v4
   - private/protocol
   - private/protocol/ec2query
-  - private/protocol/json/jsonutil
-  - private/protocol/jsonrpc
-  - private/protocol/query/queryutil
-  - private/protocol/rest
-  - private/protocol/restjson
-  - private/protocol/xml/xmlutil
   - private/waiter
-  - service/ec2
-  - service/efs
+  - private/protocol/restjson
+  - private/protocol/restxml
+  - private/protocol/rest
+  - private/protocol/query/queryutil
+  - private/protocol/xml/xmlutil
+  - private/protocol/jsonrpc
+  - private/protocol/query
+  - private/protocol/json/jsonutil
 - name: github.com/BurntSushi/toml
   version: 99064174e013895bbd9b025c31100bd1d9b590ca
 - name: github.com/cesanta/ucl
@@ -64,30 +67,59 @@ imports:
   version: 653c13de5e1e0294ca0c7eead83e396fe308b497
   subpackages:
   - api
-  - api/json
   - api/v1
   - api/v2
+  - api/json
 - name: github.com/emccode/goscaleio
   version: 09ca0f748eb937adf2ec979b7c92915d4dbf35b4
   subpackages:
-  - tls
   - types/v1
+  - tls
 - name: github.com/emccode/gournal
   version: 3bd901de15097583a5b1f4b377421cfc647c3664
   subpackages:
   - logrus
 - name: github.com/emccode/libstorage
-  version: a3a561a1b94bb8b7efb4ae998540c457deb39692
-  repo: https://github.com/emccode/libstorage
+  version: 11afa9e82032e3bf029282ee90b0fe671933f962
+  repo: https://github.com/acquia/libstorage
   subpackages:
-  - api
-  - api/client
+  - imports/local
+  - imports/remote
   - api/context
-  - api/registry
   - api/server
-  - api/server/executors
+  - api/types
+  - api/utils
+  - client
+  - api
+  - drivers/integration/docker
+  - drivers/os/darwin
+  - drivers/os/linux
+  - drivers/storage/libstorage
+  - drivers/storage/vfs/client
+  - imports/config
+  - drivers/storage/ebs/storage
+  - drivers/storage/efs/storage
+  - drivers/storage/isilon/storage
+  - drivers/storage/objectivefs/storage
+  - drivers/storage/scaleio/storage
+  - drivers/storage/vbox/storage
+  - drivers/storage/vfs/storage
+  - api/registry
   - api/server/handlers
+  - api/server/services
+  - api/utils/config
+  - imports/routers
+  - api/client
+  - drivers/storage/vfs
+  - drivers/storage/ebs
+  - drivers/storage/ebs/utils
+  - drivers/storage/efs
+  - drivers/storage/isilon
+  - drivers/storage/objectivefs
+  - drivers/storage/scaleio
+  - drivers/storage/vbox
   - api/server/httputils
+  - api/utils/schema
   - api/server/router/executor
   - api/server/router/help
   - api/server/router/root
@@ -95,35 +127,8 @@ imports:
   - api/server/router/snapshot
   - api/server/router/tasks
   - api/server/router/volume
-  - api/server/services
-  - api/types
-  - api/utils
-  - api/utils/config
+  - api/server/executors
   - api/utils/filters
-  - api/utils/schema
-  - client
-  - drivers/integration/docker
-  - drivers/os/darwin
-  - drivers/os/linux
-  - drivers/storage/ebs
-  - drivers/storage/ebs/storage
-  - drivers/storage/ebs/utils
-  - drivers/storage/efs
-  - drivers/storage/efs/storage
-  - drivers/storage/isilon
-  - drivers/storage/isilon/storage
-  - drivers/storage/libstorage
-  - drivers/storage/scaleio
-  - drivers/storage/scaleio/storage
-  - drivers/storage/vbox
-  - drivers/storage/vbox/storage
-  - drivers/storage/vfs
-  - drivers/storage/vfs/client
-  - drivers/storage/vfs/storage
-  - imports/config
-  - imports/local
-  - imports/remote
-  - imports/routers
 - name: github.com/go-ini/ini
   version: 6e4869b434bd001f6983749881c7ead3545887d8
 - name: github.com/go-yaml/yaml
@@ -151,7 +156,7 @@ imports:
 - name: github.com/magiconair/properties
   version: 0723e352fa358f9322c938cc2dadda874e9151a9
 - name: github.com/mitchellh/mapstructure
-  version: a6ef2f080c66d0a2e94e97cf74f80f772855da63
+  version: f3009df150dadf309fdee4a54ed65c124afad715
 - name: github.com/russross/blackfriday
   version: 5f33e7b7878355cd2b7e6b8eefc48a5472c69f70
 - name: github.com/shurcooL/sanitized_anchor_name
@@ -173,13 +178,13 @@ imports:
   version: 317ec73d0d7507658ee3be15866b445d6d921848
   repo: https://github.com/akutz/viper.git
 - name: golang.org/x/net
-  version: 8b4af36cd21a1f85a7484b49feb7c79363106d8e
+  version: 65dfc08770ce66f74becfdff5f8ab01caef4e946
   repo: https://github.com/golang/net
   subpackages:
   - context
   - context/ctxhttp
 - name: golang.org/x/sys
-  version: 002cbb5f952456d0c50e0d2aff17ea5eca716979
+  version: c200b10b5d5e122be351b67af224adc6128af5bf
   subpackages:
   - unix
 - name: google.golang.org/api
