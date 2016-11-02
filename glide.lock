@@ -1,5 +1,5 @@
-hash: e437275da2ef474d677f0860d4c353c08536f3af96f24a84a517ae0e2526f6af
-updated: 2016-10-28T18:04:37.530606158-05:00
+hash: b899280736e033044e827611da1b44d2eea147d5a70ab7d13f59a3d81a20b2c8
+updated: 2016-11-02T10:14:54.046774895Z
 imports:
 - name: github.com/akutz/gofig
   version: 697c16916338166671910eeaccc50f21e3c10726
@@ -24,30 +24,30 @@ imports:
   repo: https://github.com/aws/aws-sdk-go
   subpackages:
   - aws
-  - aws/awserr
-  - aws/awsutil
-  - aws/client
-  - aws/client/metadata
-  - aws/corehandlers
   - aws/credentials
   - aws/credentials/ec2rolecreds
-  - aws/defaults
   - aws/ec2metadata
-  - aws/request
   - aws/session
-  - aws/signer/v4
+  - service/ec2
+  - aws/awserr
+  - service/efs
+  - aws/client
+  - aws/client/metadata
+  - aws/request
+  - aws/corehandlers
+  - aws/defaults
   - private/endpoints
+  - aws/awsutil
+  - aws/signer/v4
   - private/protocol
   - private/protocol/ec2query
-  - private/protocol/json/jsonutil
-  - private/protocol/jsonrpc
-  - private/protocol/query/queryutil
-  - private/protocol/rest
-  - private/protocol/restjson
-  - private/protocol/xml/xmlutil
   - private/waiter
-  - service/ec2
-  - service/efs
+  - private/protocol/restjson
+  - private/protocol/rest
+  - private/protocol/query/queryutil
+  - private/protocol/xml/xmlutil
+  - private/protocol/jsonrpc
+  - private/protocol/json/jsonutil
 - name: github.com/BurntSushi/toml
   version: 99064174e013895bbd9b025c31100bd1d9b590ca
 - name: github.com/cesanta/ucl
@@ -60,30 +60,59 @@ imports:
   version: 2ea94fb4dd4f34507c9d67d8d2e35dcc0edb5f89
   subpackages:
   - api
-  - api/json
   - api/v1
   - api/v2
+  - api/json
 - name: github.com/codedellemc/goscaleio
   version: 485da3636bfcc8e70f74fe7bdc7cb25e5a6e4c4a
   subpackages:
-  - tls
   - types/v1
+  - tls
 - name: github.com/codedellemc/gournal
   version: 4293aaf7e91602963a5777caef4b346e1cf21936
   subpackages:
   - logrus
 - name: github.com/codedellemc/libstorage
-  version: 96e6a3a257dccbbd07b13d8b02e06bd9a4ed2ae9
-  repo: https://github.com/codedellemc/libstorage
+  version: cae755ab8f3bf207756e5513c012effaa228abaa
+  repo: https://github.com/acquia/libstorage
   subpackages:
-  - api
-  - api/client
+  - imports/local
+  - imports/remote
   - api/context
-  - api/registry
   - api/server
-  - api/server/executors
+  - api/types
+  - api/utils
+  - client
+  - api
+  - drivers/integration/docker
+  - drivers/os/darwin
+  - drivers/os/linux
+  - drivers/storage/libstorage
+  - drivers/storage/vfs/client
+  - imports/config
+  - drivers/storage/ebs/storage
+  - drivers/storage/efs/storage
+  - drivers/storage/isilon/storage
+  - drivers/storage/objectivefs/storage
+  - drivers/storage/scaleio/storage
+  - drivers/storage/vbox/storage
+  - drivers/storage/vfs/storage
+  - api/registry
   - api/server/handlers
+  - api/server/services
+  - api/utils/config
+  - imports/routers
+  - api/client
+  - drivers/storage/vfs
+  - drivers/storage/ebs
+  - drivers/storage/ebs/utils
+  - drivers/storage/efs
+  - drivers/storage/isilon
+  - drivers/storage/objectivefs
+  - drivers/storage/scaleio
+  - drivers/storage/vbox
   - api/server/httputils
+  - api/utils/schema
   - api/server/router/executor
   - api/server/router/help
   - api/server/router/root
@@ -91,35 +120,8 @@ imports:
   - api/server/router/snapshot
   - api/server/router/tasks
   - api/server/router/volume
-  - api/server/services
-  - api/types
-  - api/utils
-  - api/utils/config
+  - api/server/executors
   - api/utils/filters
-  - api/utils/schema
-  - client
-  - drivers/integration/docker
-  - drivers/os/darwin
-  - drivers/os/linux
-  - drivers/storage/ebs
-  - drivers/storage/ebs/storage
-  - drivers/storage/ebs/utils
-  - drivers/storage/efs
-  - drivers/storage/efs/storage
-  - drivers/storage/isilon
-  - drivers/storage/isilon/storage
-  - drivers/storage/libstorage
-  - drivers/storage/scaleio
-  - drivers/storage/scaleio/storage
-  - drivers/storage/vbox
-  - drivers/storage/vbox/storage
-  - drivers/storage/vfs
-  - drivers/storage/vfs/client
-  - drivers/storage/vfs/storage
-  - imports/config
-  - imports/local
-  - imports/remote
-  - imports/routers
 - name: github.com/cpuguy83/go-md2man
   version: a65d4d2de4d5f7c74868dfa9b202a3c8be315aaa
   subpackages:
@@ -173,7 +175,7 @@ imports:
   version: 317ec73d0d7507658ee3be15866b445d6d921848
   repo: https://github.com/akutz/viper.git
 - name: golang.org/x/net
-  version: dffc95cbb4ff9af8614b2741ec26371fffcc19b3
+  version: 65dfc08770ce66f74becfdff5f8ab01caef4e946
   repo: https://github.com/golang/net
   subpackages:
   - context
